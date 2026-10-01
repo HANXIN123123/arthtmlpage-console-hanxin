@@ -1,0 +1,162 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "main-page": {
+      ".read": true
+    },
+    "youtube-category": {
+      ".read": true
+    },
+    "image-category": {
+      ".read": true
+    },
+    "callendar-setting": {
+      ".read": true
+    },
+    "analytics": {
+      ".read": false,
+      ".write": false,
+      "sessions": {
+        "$id": {
+          ".read": "auth != null && (!data.exists() || data.child('owner').val() === auth.uid)",
+          ".write": "auth != null && ((!data.exists() && newData.child('owner').val() === auth.uid) || (data.child('owner').val() === auth.uid && newData.exists() && data.child('expiresAt').val() > now) || (!newData.exists() && data.child('expiresAt').val() <= now))",
+          ".validate": "newData.hasChildren(['owner','browserId','startedAt','recordedAt','expiresAt','device','source','newVisitor','seconds','loadMs','copied','maxScrollDepth','scrollMeasured'])",
+          "owner": {
+            ".validate": "newData.val() === auth.uid && (!data.exists() || newData.val() === data.val())"
+          },
+          "browserId": {
+            ".validate": "newData.val() === auth.uid && (!data.exists() || newData.val() === data.val())"
+          },
+          "startedAt": {
+            ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() <= now + 1000 && newData.val() >= now - 180000)"
+          },
+          "recordedAt": {
+            ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() <= now + 1000 && newData.val() >= now - 60000)"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() >= now + 2592000000-60000 && newData.val() <= now + 2592000000+1000)"
+          },
+          "device": {
+            ".validate": "(newData.val() === 'pc' || newData.val() === 'mobile') && (!data.exists() || newData.val() === data.val())"
+          },
+          "source": {
+            ".validate": "(newData.val() === 'board' || newData.val() === 'direct' || newData.val() === 'unknown') && (!data.exists() || newData.val() === data.val())"
+          },
+          "newVisitor": {
+            ".validate": "newData.isBoolean() && (!data.exists() || newData.val() === data.val())"
+          },
+          "seconds": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= (now-newData.parent().child('startedAt').val())/1000+2 && (!data.exists() || newData.val() >= data.val())"
+          },
+          "loadMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120000"
+          },
+          "copied": {
+            ".validate": "newData.isBoolean() && (data.val() !== true || newData.val() === true)"
+          },
+          "scrollMeasured": {
+            ".validate": "newData.isBoolean() && (data.val() !== true || newData.val() === true)"
+          },
+          "maxScrollDepth": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "sections": {
+            "$name": {
+              ".validate": "($name === 'hero' || $name === 'calendar' || $name === 'notice' || $name === 'about' || $name === 'portfolio' || $name === 'request') && newData.val() === true"
+            }
+          },
+          "portfolio": {
+            "$key": {
+              ".validate": "newData.hasChildren(['kind','title','count'])",
+              "kind": {
+                ".validate": "newData.val() === 'video' || newData.val() === 'image'"
+              },
+              "title": {
+                ".validate": "newData.isString() && newData.val().length <= 100"
+              },
+              "count": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "portfolioItems": {
+            "$key": {
+              ".validate": "newData.hasChildren(['kind','title','count'])",
+              "kind": {
+                ".validate": "newData.val() === 'video' || newData.val() === 'image'"
+              },
+              "title": {
+                ".validate": "newData.isString() && newData.val().length <= 100"
+              },
+              "count": {
+                ".validate": "newData.val() === 1"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "visitors": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && ((auth.uid === $uid && newData.exists()) || (!newData.exists() && data.child('expiresAt').val() <= now))",
+          ".validate": "newData.hasChildren(['firstSession','firstSeen','lastSeen','expiresAt'])",
+          "firstSession": {
+            ".validate": "newData.isString() && newData.val().length <= 64 && (!data.exists() || data.parent().child('expiresAt').val() <= now || newData.val() === data.val())"
+          },
+          "firstSeen": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 1000 && (!data.exists() || data.parent().child('expiresAt').val() <= now || newData.val() === data.val())"
+          },
+          "lastSeen": {
+            ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 1000"
+          },
+          "expiresAt": {
+            ".validate": "newData.val() === newData.parent().child('lastSeen').val() + 2592000000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "expiry": {
+        ".indexOn": [
+          "expiresAt"
+        ],
+        ".read": "auth != null && query.orderByChild === 'expiresAt' && query.endAt === root.child('analytics/visitors').child(auth.uid).child('lastSeen').val() - 1000 && query.limitToFirst != null && query.limitToFirst <= 100",
+        "$key": {
+          ".write": "auth != null && ((newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid)) || (!newData.exists() && data.child('expiresAt').val() <= now && (data.child('kind').val() !== 'visitor' || root.child('analytics/visitors').child(data.child('uid').val()).child('expiresAt').val() <= now)))",
+          ".validate": "newData.hasChildren(['uid','kind','expiresAt']) && newData.child('expiresAt').val() >= now + 2592000000-60000 && newData.child('expiresAt').val() <= now + 2592000000+1000",
+          "uid": {
+            ".validate": "newData.val() === auth.uid"
+          },
+          "kind": {
+            ".validate": "newData.val() === 'session' || (newData.val() === 'visitor' && $key === 'v_'+auth.uid)"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "counters": {
+        "$day": {
+          "$field": {
+            ".write": "auth != null && ($field === 'visitors' || $field === 'pageViews') && newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    }
+  }
+}
