@@ -11,7 +11,8 @@ function validateMainPageConfig(config, projectId, databaseURL, configs) {
 }
 function inspectMainPage(value) {
   const url=normalizeHttps(value);
-  if(url.origin===location.origin)throw new Error('콘솔 주소가 아니라 메인페이지 주소를 입력해주세요.');
+  const pagePath=path=>path.replace(/\/index\.html$/i,'/').replace(/\/$/,'');
+  if(url.origin===location.origin && pagePath(url.pathname)===pagePath(location.pathname))throw new Error('콘솔 주소가 아니라 메인페이지 주소를 입력해주세요.');
   url.searchParams.set('artmug-verify','1');
   return new Promise((resolve,reject)=>{
     const frame=document.createElement('iframe');
@@ -120,3 +121,4 @@ function renderConnectedPages(force=false) {
     panel.appendChild(card);
   }
 }
+
