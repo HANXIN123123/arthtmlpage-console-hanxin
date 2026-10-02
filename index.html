@@ -1032,6 +1032,11 @@ function buildPrimaryCard(primaryKey, primaryVal) {
     }
   });
   header.append(left, delBtn);
+  if(primaryKey==='image-category'){
+    const organize=document.createElement('button');organize.type='button';organize.className='btn-confirm';organize.textContent='프로젝트 폴더로 정리';
+    organize.addEventListener('click',async()=>{organize.disabled=true;try{const result=await organizeProjectDrive(text=>organize.textContent=text);organize.textContent=`정리 완료: ${result.categories}개 폴더 · ${result.files}개 파일`;}catch(error){organize.textContent='정리 실패: '+error.message;}finally{organize.disabled=false;}});
+    header.append(organize);
+  }
   card.appendChild(header);
 
   const body = document.createElement('div');
@@ -1387,14 +1392,9 @@ function buildImageAddForm(primaryKey, subKey, subVal) {
     uploadBtn.disabled = true; cancelBtn.disabled = true; fileInput.disabled = true;
     msgP.className = 'inline-form-msg'; msgP.style.display = 'block';
     try {
-      let folderId = subVal.driveFolderId;
-      if (!folderId) {
-        msgP.textContent = '드라이브 폴더를 준비하는 중...';
-        const rootId = await findOrCreateFolder(DRIVE_ROOT_FOLDER_NAME, null);
-        folderId = await findOrCreateFolder(subVal.name || '미분류', rootId);
-        await fbPatch(`${primaryKey}/categories/${subKey}`, { driveFolderId: folderId });
-        subVal.driveFolderId=folderId;recover.disabled=false;
-      }
+      msgP.textContent = '프로젝트별 드라이브 폴더를 준비하는 중...';
+      const folderId = await ensureCategoryDriveFolder(primaryKey,subKey,subVal);
+      recover.disabled=false;
       for (let i = 0; i < selectedFiles.length; i++) {
         msgP.textContent = `업로드 중... (${i + 1}/${selectedFiles.length})`;
         const file = selectedFiles[i];
@@ -1492,6 +1492,7 @@ function escapeHtml(str) {
 }
 </script>
 <script src="./project-setup.js"></script>
+<script src="./drive-layout.js"></script>
 <script src="./portfolio-order.js"></script>
 <script src="./page-connection.js"></script>
 <script src="./dashboard.js"></script>
