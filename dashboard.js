@@ -34,10 +34,34 @@
  function bars(title,rows){const card=make('section',undefined,'dash-card');card.append(make('h3',title));if(!rows.length)card.append(make('p','아직 측정된 기록이 없습니다.','dash-muted'));for(const row of rows){const head=make('div',undefined,'dash-heading');head.append(make('span',row.label),make('strong',row.value));const bar=make('div',undefined,'dash-bar'),fill=make('i');fill.style.width=Math.min(100,row.percent)+'%';bar.append(fill);card.append(head,bar);}return card;}
  function mountAnalytics(panel,main,version,url){
   const tools=make('div',undefined,'dash-heading'),status=make('p','최근 30일 · 한국시간 기준','dash-muted'),body=make('div',undefined,'dash-body');let data={},loading=false;
-  tools.append(status,button('새로고침',refresh),button('내역 초기화',async()=>{if(!confirm('방문 기록, 브라우저 식별값, 누적 카운터를 모두 초기화할까요?'))return;if(version!==connectionVersion||!linked())return;try{await fbDeletePath('analytics');await refresh();status.textContent='분석 내역을 초기화했습니다.';}catch(e){status.textContent=e.message;}}));
+  const refreshButton=button('새로고침',refresh);
+  refreshButton.id='behaviorRefreshBtn';
+  const resetButton=button('내역 초기화',async()=>{
+   if(loading||version!==connectionVersion||!linked()||!confirm('방문 기록, 브라우저 식별값, 누적 카운터를 모두 초기화할까요?'))return;
+   setLoading(true);
+   try{
+    await fbDeletePath('analytics');
+    if(version!==connectionVersion||!body.isConnected)return;
+    data={};render();
+    status.textContent='분석 내역을 초기화했습니다.';
+   }catch(e){status.textContent=e.message;}finally{setLoading(false);}
+  });
+  tools.append(status,refreshButton,resetButton);
   panel.append(tools,make('p','브라우저 ID 기준 · 5초 이상 방문부터 기록합니다. 새 방문 기록을 저장할 때 30일이 지난 상세 기록과 식별값을 정리하며, 누적 카운터는 유지합니다.','dash-muted'),body);
-  if(latestData._artmug?.analyticsVersion!==3){const setup=button('브라우저 분석 설정',async()=>{if(!confirm('현재 프로젝트에 익명 방문 인증과 30일 보관 분석 규칙을 설정할까요? 기존 분석 경로의 규칙을 교체합니다.'))return;setup.disabled=true;try{await configureBrowserAnalytics(version);setup.remove();status.textContent='브라우저 분석 설정 완료';await refresh();}catch(e){status.textContent=e.message;setup.disabled=false;}});tools.append(setup);}
-  async function refresh(){if(loading||version!==connectionVersion||!linked())return;loading=true;try{const result=await get('analytics',url,version);if(version!==connectionVersion||!body.isConnected)return;data=result||{};data.totals=Object.values(data.counters||{}).reduce((a,r)=>({visitors:a.visitors+(r.visitors||0),pageViews:a.pageViews+(r.pageViews||0)}),{visitors:0,pageViews:0});render();}catch(e){status.textContent=e.message;}finally{loading=false;}}
+  if(latestData._artmug?.analyticsVersion!==3){const setup=button('브라우저 분석 설정',async()=>{if(!confirm('현재 프로젝트에 익명 방문 인증과 30일 보관 분석 규칙을 설정할까요? 기존 분석 경로의 규칙을 교체합니다.'))return;setup.disabled=true;try{await configureBrowserAnalytics(version);setup.remove();status.textContent='브라우저 분석 설정 완료';}catch(e){status.textContent=e.message;setup.disabled=false;}});tools.append(setup);}
+  function setLoading(value){loading=value;refreshButton.disabled=resetButton.disabled=value;}
+  async function refresh(){
+   if(loading||version!==connectionVersion||!linked())return;
+   setLoading(true);
+   status.textContent='행동 분석을 불러오는 중입니다.';
+   try{
+    const result=await get('analytics',url,version);
+    if(version!==connectionVersion||!body.isConnected)return;
+    data=result||{};
+    data.totals=Object.values(data.counters||{}).reduce((a,r)=>({visitors:a.visitors+(r.visitors||0),pageViews:a.pageViews+(r.pageViews||0)}),{visitors:0,pageViews:0});
+    render();status.textContent='최근 30일 · 한국시간 기준';
+   }catch(e){status.textContent=e.message;}finally{setLoading(false);}
+  }
   function render(){body.replaceChildren();const sessions=Object.values(data.sessions||{}).filter(s=>s.startedAt>=Date.now()-30*86400000),day=sessions.filter(s=>dateKey(s.startedAt)===today()),n=sessions.length,percent=v=>n?(v/n*100).toFixed(1)+'%':'0%';
    const first=make('div',undefined,'dash-grid three'),todayCard=metric('당일 페이지 뷰',String(day.length),'PC '+day.filter(s=>s.device==='pc').length+' · 모바일 '+day.filter(s=>s.device==='mobile').length+' · 의뢰게시판 '+day.filter(s=>s.source==='board').length);todayCard.append(button('상세보기',()=>details(sessions)));first.append(metric('총 방문자 수',String(data.totals?.visitors||0),'30일 이내 같은 브라우저 중복 제외'),metric('총 페이지 뷰',String(data.totals?.pageViews||0),'5초 이상 방문 누적'),todayCard);
    const second=make('div',undefined,'dash-grid four');second.append(metric('문의 양식 복사율',percent(sessions.filter(s=>s.copied).length)),metric('신규 방문자 비율',percent(sessions.filter(s=>s.newVisitor).length)),metric('평균 체류 시간',seconds(n?sessions.reduce((a,s)=>a+s.seconds,0)/n:0)),metric('평균 로드시간',(n?sessions.reduce((a,s)=>a+s.loadMs,0)/n/1000:0).toFixed(2)+'초'));
@@ -49,7 +73,9 @@
    body.append(first,second,make('p','복사율은 버튼 클릭 기준입니다. 체류시간은 접속부터 탭이 보이는 시간을 합산합니다. 작품 노출은 화면에 보인 작품을 방문당 1회 기록합니다.','dash-muted'),charts,tables,extra);
   }
   function details(sessions){const modal=dialog('방문 상세 내역 · 한국시간'),filter=make('input');filter.type='date';filter.value=today();filter.min=dateKey(Date.now()-29*86400000);filter.max=today();const wrap=make('div',undefined,'dash-table-wrap');const mode=make('select');for(const [value,label] of [['all','전체 방문'],['new','신규 방문자']]){const o=make('option',label);o.value=value;mode.append(o);}modal.append(filter,mode,wrap);const draw=()=>{wrap.replaceChildren();const table=make('table'),head=make('tr');['접속 시간','브라우저 ID','환경','체류시간','신규','의뢰게시판','복사 버튼','최대 스크롤'].forEach(x=>head.append(make('th',x)));table.append(head);const rows=sessions.filter(s=>dateKey(s.startedAt)===filter.value&&(mode.value==='all'||s.newVisitor)).sort((a,b)=>b.startedAt-a.startedAt);for(const s of rows){const row=make('tr');[new Intl.DateTimeFormat('ko-KR',{timeZone:zone,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(s.startedAt)),s.browserId,s.device==='mobile'?'모바일':s.device==='pc'?'PC':'확인 불가',seconds(s.seconds),s.newVisitor?'신규':'재방문',s.source==='board'?'예':s.source==='unknown'?'확인 불가':'아니요',s.copied?'클릭':'—',s.scrollMeasured?(s.maxScrollDepth||0)+'%':'미측정'].forEach(x=>row.append(make('td',x)));table.append(row);}wrap.append(table);if(!rows.length)wrap.append(make('p','이 날짜의 기록이 없습니다.'));};filter.onchange=draw;mode.onchange=draw;draw();}
-  refresh();
-  const timer=setInterval(()=>{if(!body.isConnected||version!==connectionVersion){clearInterval(timer);return;}if(!document.hidden&&panel.classList.contains('active'))refresh();},15000);
+  if(panel.dataset.refreshOnMount==='true'){
+   delete panel.dataset.refreshOnMount;
+   refresh();
+  }
  }
 })();

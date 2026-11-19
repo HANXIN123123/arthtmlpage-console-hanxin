@@ -58,6 +58,7 @@ ul,ol{list-style:none;}
   width:var(--sidebar-w);flex-shrink:0;background:#fff;
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;padding:22px 0;
+  position:sticky;top:0;align-self:flex-start;height:100vh;height:100dvh;overflow-y:auto;
   transition:width var(--tr);z-index:50;
 }
 .sidebar.collapsed{width:var(--sidebar-w-collapsed);}
@@ -95,6 +96,57 @@ ul,ol{list-style:none;}
 .menu-item:hover{background:var(--main-pale2);color:var(--main-dark);}
 .menu-item.active{background:var(--main-pale);color:var(--main);font-weight:700;}
 .menu-item svg{flex-shrink:0;}
+
+.sidebar-footer{margin-top:auto;padding:18px 14px 0;}
+.updates-trigger{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:42px;
+  padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+  background:var(--main-pale2);color:var(--main-dark);font-size:13px;font-weight:700;
+  text-align:left;white-space:nowrap;transition:background var(--tr),color var(--tr);
+}
+.updates-trigger svg{flex-shrink:0;}
+.updates-trigger:hover{background:var(--main-pale);}
+.sidebar.collapsed .updates-trigger{justify-content:center;padding-inline:0;}
+.sidebar.collapsed .updates-trigger span{display:none;}
+.updates-trigger:focus-visible,.updates-close:focus-visible,.release-entry summary:focus-visible{
+  outline:2px solid var(--main);outline-offset:-3px;
+}
+
+.updates-dialog{
+  inset:0;margin:auto;padding:0;width:min(36rem,calc(100% - 32px));
+  max-height:min(36rem,calc(100vh - 32px));max-height:min(36rem,calc(100dvh - 32px));
+  overflow:hidden;border:1px solid var(--border);border-radius:18px;
+  background:var(--white);color:var(--text);box-shadow:0 22px 60px rgba(30,27,75,.22);
+}
+.updates-dialog[open]{display:grid;grid-template-rows:auto minmax(0,1fr);}
+.updates-dialog::backdrop{background:rgba(30,27,75,.46);}
+.updates-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px clamp(16px,4vw,26px);border-bottom:1px solid var(--border);
+  background:var(--main-pale2);
+}
+.updates-header h2{font-size:20px;line-height:1.4;}
+.updates-close{display:grid;place-items:center;width:36px;height:36px;border-radius:8px;color:var(--text-sub);}
+.updates-close:hover{background:var(--main-pale);color:var(--main-dark);}
+.release-log{display:grid;align-content:start;gap:10px;overflow:auto;padding:18px clamp(16px,4vw,26px) 24px;}
+.release-entry{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.release-entry summary{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;list-style:none;color:var(--text);
+}
+.release-entry summary::-webkit-details-marker{display:none;}
+.release-entry summary:hover,.release-entry[open] summary{background:var(--main-pale2);}
+.release-entry[open] summary{border-bottom:1px solid var(--border);}
+.release-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;}
+.release-version{
+  padding:3px 8px;border-radius:6px;background:var(--main-pale);color:var(--main-dark);
+  font-size:13px;font-weight:700;
+}
+.release-meta time{font-size:13px;color:var(--text-sub);font-variant-numeric:tabular-nums;}
+.release-chevron{flex-shrink:0;color:var(--main-dark);}
+.release-entry[open] .release-chevron{transform:rotate(180deg);}
+.release-changes{display:grid;gap:8px;padding:14px 16px 16px 34px;list-style:disc;font-size:14px;line-height:1.65;}
+.release-changes li::marker{color:var(--main);}
 
 .sidebar-backdrop{
   position:fixed;inset:0;background:rgba(30,27,75,.38);
@@ -328,7 +380,7 @@ ul,ol{list-style:none;}
 /* ===== 반응형 (모바일: 사이드바 = 오프캔버스) ===== */
 @media (max-width:880px){
   .sidebar{
-    position:fixed;top:0;left:0;height:100vh;
+    position:fixed;top:0;left:0;
     transform:translateX(-100%);box-shadow:var(--shadow-lg);width:var(--sidebar-w);
   }
   .sidebar.mobile-open{transform:translateX(0);}
@@ -411,6 +463,13 @@ details summary{cursor:pointer;color:var(--main);font-size:13px;padding:10px 0;}
           <span>포트폴리오 관리</span>
         </button>
       </nav>
+    </div>
+    <div class="sidebar-footer">
+      <button class="updates-trigger" id="updatesTrigger" type="button" title="업데이트 로그"
+              aria-label="업데이트 로그" aria-haspopup="dialog" aria-controls="updatesDialog">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8m-8 4h8"/></svg>
+        <span>업데이트 로그</span>
+      </button>
     </div>
   </aside>
 
@@ -530,6 +589,29 @@ details summary{cursor:pointer;color:var(--main);font-size:13px;padding:10px 0;}
   </div>
 </div>
 
+<dialog class="updates-dialog" id="updatesDialog" aria-labelledby="updatesTitle">
+  <header class="updates-header">
+    <h2 id="updatesTitle">업데이트 로그</h2>
+    <form method="dialog">
+      <button class="updates-close" type="submit" aria-label="닫기" autofocus>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </form>
+  </header>
+  <div class="release-log">
+    <details class="release-entry" name="console-releases" open>
+      <summary>
+        <span class="release-meta"><span class="release-version">0.0.1 ver</span><time datetime="2026-11-20">2026년 11월 20일</time></span>
+        <svg class="release-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </summary>
+      <ul class="release-changes">
+        <li>행동 분석은 메뉴에 들어오거나 새로고침 버튼을 눌렀을 때 갱신되도록 변경했습니다. 15초 주기 자동 갱신을 제거했습니다.</li>
+        <li>사이드바 하단에 버전, 업데이트 날짜, 변경 내용을 확인할 수 있는 업데이트 로그를 추가했습니다.</li>
+      </ul>
+    </details>
+  </div>
+</dialog>
+
 <footer style="text-align:center;padding:16px;font-size:12px"><a href="./privacy.html" target="_blank" rel="noopener noreferrer">개인정보 안내</a></footer>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script>
@@ -560,8 +642,15 @@ const backdrop = document.getElementById('sidebarBackdrop');
 const sidebarToggle = document.getElementById('sidebarToggle');
 const menuItems = document.querySelectorAll('.menu-item');
 const panels = document.querySelectorAll('.page-panel');
+const behaviorPanel = document.getElementById('page-behavior');
 const pageTitleText = document.getElementById('pageTitleText');
 const pageIcon = document.getElementById('pageIcon');
+const updatesDialog = document.getElementById('updatesDialog');
+
+document.getElementById('updatesTrigger').addEventListener('click', ()=>{
+  updatesDialog.querySelector('.release-entry').open = true;
+  updatesDialog.showModal();
+});
 
 function isMobile(){ return window.innerWidth <= 880; }
 
@@ -569,11 +658,21 @@ menuItems.forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const page = btn.dataset.page;
     if(!pageMeta[page]) return;
+    const enteringPage = !btn.classList.contains('active');
     menuItems.forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     panels.forEach(p=>p.classList.toggle('active', p.id === `page-${page}`));
     pageTitleText.textContent = pageMeta[page].title;
     pageIcon.innerHTML = pageMeta[page].icon;
+    if(enteringPage){
+      if(page === 'behavior'){
+        const refreshButton = document.getElementById('behaviorRefreshBtn');
+        if(refreshButton) refreshButton.click();
+        else behaviorPanel.dataset.refreshOnMount = 'true';
+      } else {
+        delete behaviorPanel.dataset.refreshOnMount;
+      }
+    }
     if(isMobile()){
       sidebar.classList.remove('mobile-open');
       backdrop.classList.remove('show');
@@ -1495,9 +1594,9 @@ function escapeHtml(str) {
 <script src="./drive-layout.js"></script>
 <script src="./portfolio-order.js"></script>
 <script src="./page-connection.js"></script>
-<script src="./dashboard.js"></script>
+<script src="./dashboard.js?v=0.0.1"></script>
 <script src="./analytics-setup.js"></script>
-<script src="./page-links.js"></script>
+<script src="./page-links.js?v=0.0.1"></script>
 </body>
 </html>
 

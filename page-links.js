@@ -45,16 +45,28 @@ function renderConnectedPages(force=false) {
   const signature=JSON.stringify([fbState.projectId,fbState.connected,main]);
   if(!force && signature===renderedConnection)return;
   renderedConnection=signature;
+  const dashboardAvailable=fbState.connected && main.url && main.linked!==false && main.projectId===fbState.projectId;
   for(const page of ['overview','behavior','schedule']) {
     const panel=document.getElementById('page-'+page);
+    const titleText=page==='overview'?'페이지 연결 관리':(main.name || fbState.projectName)+' · '+pageMeta[page].title;
+    if(page==='behavior' && dashboardAvailable && panel.dataset.dashboardVersion===String(connectionVersion)){
+      panel.querySelector('.fb-connect-card h3').textContent=titleText;
+      continue;
+    }
+    delete panel.dataset.dashboardVersion;
     if(!fbState.connected){panel.innerHTML=disconnectedPanels[page];continue;}
     panel.replaceChildren();
     const card=document.createElement('div');card.className='fb-connect-card';
     const title=document.createElement('h3');
-    title.textContent=page==='overview'?'페이지 연결 관리':(main.name || fbState.projectName)+' · '+pageMeta[page].title;
+    title.textContent=titleText;
     const subtitle=document.createElement('p');subtitle.textContent=fbState.projectName+' · '+fbState.projectId;
     card.append(title,subtitle);
-    if(page!=='overview' && main.url && main.linked!==false && main.projectId===fbState.projectId){panel.append(card);window.mountProjectDashboard(page,panel,main);continue;}
+    if(page!=='overview' && dashboardAvailable){
+      panel.append(card);
+      window.mountProjectDashboard(page,panel,main);
+      if(page==='behavior')panel.dataset.dashboardVersion=String(connectionVersion);
+      continue;
+    }
     if(page!=='overview') {
       const note=document.createElement('p');
       note.textContent=main.url
