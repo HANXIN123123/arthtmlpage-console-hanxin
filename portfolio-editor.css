@@ -1,0 +1,54 @@
+.pe-editor{display:grid;gap:16px;min-width:0;color:var(--text)}
+.pe-editor button,.pe-dialog button{font:inherit;cursor:pointer}
+.pe-editor button:disabled,.pe-dialog button:disabled{opacity:.45;cursor:default}
+.pe-toolbar,.pe-heading,.pe-secondary,.pe-tools,.pe-dialog-actions,.pe-card-actions,.pe-card-title{display:flex;align-items:center;gap:8px}
+.pe-toolbar,.pe-heading,.pe-secondary{flex-wrap:wrap}
+.pe-button,.pe-icon,.pe-position,.pe-tab,.pe-text{
+  border:1px solid var(--border);border-radius:9px;background:white;color:var(--main-dark);
+}
+.pe-editor .pe-button,.pe-dialog .pe-button{padding:8px 13px;font-size:13px;font-weight:600}
+.pe-button:hover,.pe-icon:hover,.pe-tab:hover{background:var(--main-pale2)}
+.pe-button.pe-primary,.pe-tab[aria-pressed="true"]{background:var(--main);border-color:var(--main);color:white}
+.pe-tabs{position:relative;display:flex;gap:7px;overflow-x:auto;overscroll-behavior-x:contain;padding:3px 1px 9px;scrollbar-width:thin}
+.pe-editor .pe-tab{flex:0 0 auto;max-width:min(80vw,340px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:9px 16px;font-size:14px;font-weight:600}
+.pe-heading h3{font-size:17px;overflow-wrap:anywhere}
+.pe-heading .pe-toolbar{margin-inline-start:auto}
+.pe-area{min-width:0;display:grid;gap:16px;padding:clamp(12px,2vw,20px);border:1px solid var(--border);border-radius:14px;background:var(--white)}
+.pe-secondary{padding-bottom:12px;border-bottom:1px solid var(--border)}
+.pe-tools{gap:4px;flex:none}
+.pe-icon{display:grid;place-items:center;width:32px;height:32px}
+.pe-editor .pe-icon{font-family:system-ui,sans-serif;font-size:18px}
+.pe-input{max-width:100%;min-width:0;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:white;color:var(--text);font:inherit}
+.pe-secondary select{max-width:min(100%,26rem);font-size:14px;font-weight:700}
+.pe-status,.pe-note,.pe-empty{color:var(--text-sub);font-size:13px;line-height:1.65}
+.pe-status:empty,.pe-error:empty{display:none}
+.pe-empty{padding:20px 4px;text-align:center}
+.pe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(156px,100%),1fr));gap:12px;padding:0;list-style:none}
+.pe-card{min-width:0;overflow:hidden;display:flex;flex-direction:column;gap:6px;padding:7px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+.pe-preview{position:relative;background:var(--main-pale2);border-radius:7px;aspect-ratio:1;overflow:hidden}
+.pe-preview img,.pe-preview iframe{display:block;width:100%;height:100%;object-fit:contain;border:0}
+.pe-preview .pe-play{position:absolute;inset:0;display:grid;place-items:center;color:white;background:#20113624;text-shadow:0 1px 8px #291944;font-size:23px}
+.pe-card-title{align-items:flex-start;gap:6px;padding-top:3px}
+.pe-card-title span{min-width:0;overflow-wrap:anywhere;font-size:13px;font-weight:600;line-height:1.5}
+.pe-editor .pe-position{min-width:28px;padding:2px 5px;font-size:12px;font-weight:700;background:var(--main-pale);font-variant-numeric:tabular-nums}
+.pe-card-actions{margin-top:auto;gap:4px;justify-content:space-between}
+.pe-grip{display:inline-flex;align-items:center;min-height:30px;padding:0 3px;color:var(--text-sub);font-size:12px;cursor:grab}
+.pe-card-actions .pe-icon{width:28px;height:28px;background:transparent;border-color:transparent}
+.pe-editor .pe-text{padding:3px 6px;font-size:12px}
+.pe-drive summary{cursor:pointer;font-size:12px;color:var(--main-dark);padding:6px}
+.pe-drive .pe-button{margin:2px}
+.pe-dialog{inset:0;margin:auto;width:min(420px,calc(100% - 24px));max-height:calc(100dvh - 30px);padding:0;border:1px solid var(--border);border-radius:16px;background:white;color:var(--text);box-shadow:var(--shadow-lg)}
+.pe-dialog::backdrop{background:rgba(30,27,75,.45)}
+.pe-dialog-form{display:grid;gap:15px;padding:22px}
+.pe-dialog-form h3{font-size:18px;line-height:1.5;overflow-wrap:anywhere}
+.pe-field{display:grid;gap:6px;font-size:13px;font-weight:600}
+.pe-field .pe-input{width:100%}
+.pe-dialog-actions{justify-content:flex-end}
+.pe-error{font-size:13px;color:#a12639;overflow-wrap:anywhere}
+.pe-button.pe-danger{background:#a12639;color:white;border-color:#a12639}
+.pe-editor :focus-visible,.pe-dialog :focus-visible{outline:2px solid var(--main);outline-offset:1px}
+@media(max-width:550px){
+  .pe-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .pe-heading .pe-toolbar{margin-inline-start:0}
+  .pe-secondary select{max-width:100%}
+}

@@ -115,8 +115,7 @@ async function prepareFirebaseProject(project, version) {
     root={
       '_artmug':{app:'artmug-console',schemaVersion:2,projectId:project.projectId,createdAt:Date.now(),setupPending:true},
       'main-page':{name:project.displayName || project.projectId,url:'',artmugUrl:'',projectId:project.projectId,linked:false,managed:true},
-      'youtube-category':{createdAt:Date.now()},
-      'image-category':{createdAt:Date.now()}
+      'image-category':{createdAt:Date.now(),portfolioV2:{version:2}}
     };
     const write=await fetch(databaseURL+'/.json',{
       method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json','if-match':etag},body:JSON.stringify(root)
